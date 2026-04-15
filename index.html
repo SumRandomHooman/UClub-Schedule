@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BU ↔ UClub Bus Schedule</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0f11;
+    --surface: #16181c;
+    --surface2: #1e2127;
+    --border: #2a2d35;
+    --border2: #373b45;
+    --text: #e8eaf0;
+    --text-muted: #7a7f8e;
+    --text-dim: #4a4f5c;
+    --accent: #5b9cf6;
+    --accent-dim: #1a2a45;
+    --green: #5bf6a0;
+    --green-dim: #0e2a1c;
+    --tag-itc: #5b9cf6;
+    --tag-itc-bg: #1a2a45;
+    --tag-uclub: #a78bfa;
+    --tag-uclub-bg: #1e1535;
+    --note-bg: #2e2510;
+    --note: #f6c05b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+
+  header {
+    padding: 2.5rem 2rem 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 1rem;
+  }
+  .logo-row { display: flex; align-items: center; gap: 12px; }
+  .bus-icon {
+    width: 36px; height: 36px; background: var(--accent-dim);
+    border: 1px solid var(--accent); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+  }
+  h1 { font-family: 'DM Mono', monospace; font-size: 1.25rem; font-weight: 500; color: var(--text); }
+  h1 span { color: var(--accent); }
+  .subtitle { font-size: 12px; color: var(--text-muted); margin-top: 2px; font-family: 'DM Mono', monospace; }
+  .live-time { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text-muted); text-align: right; }
+  .live-time .clock { font-size: 20px; color: var(--text); display: block; }
+
+  .route-strip {
+    padding: 1rem 2rem; background: var(--surface); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; overflow-x: auto;
+  }
+  .stop-node { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 80px; }
+  .stop-node .dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--accent); border: 2px solid var(--accent);
+  }
+  .stop-node .dot.uc { background: var(--tag-uclub); border-color: var(--tag-uclub); }
+  .stop-node span { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text-muted); text-align: center; white-space: nowrap; }
+  .route-seg { display: flex; align-items: center; gap: 2px; position: relative; top: -10px; flex: 1; min-width: 20px; }
+  .route-seg .line { flex: 1; height: 2px; background: var(--border2); }
+  .route-seg .arr { font-size: 11px; color: var(--text-dim); }
+
+  .controls {
+    padding: 1rem 2rem; display: flex; gap: 12px; flex-wrap: wrap;
+    border-bottom: 1px solid var(--border); background: var(--surface);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .pill-group {
+    display: flex; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+  }
+  .pill-group button {
+    padding: 7px 16px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+    background: transparent; border: none; color: var(--text-muted); cursor: pointer;
+    border-right: 1px solid var(--border); transition: all 0.15s;
+  }
+  .pill-group button:last-child { border-right: none; }
+  .pill-group button.active { background: var(--accent-dim); color: var(--accent); }
+
+  .next-bus {
+    margin: 1.25rem 2rem 0; padding: 14px 18px;
+    background: var(--green-dim); border: 1px solid #1f5e3a; border-radius: 10px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .next-bus .dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+    flex-shrink: 0; animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .next-bus .label { font-size: 11px; color: var(--green); font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .06em; }
+  .next-bus .time { font-size: 18px; font-family: 'DM Mono', monospace; font-weight: 500; color: var(--text); }
+  .next-bus .countdown { margin-left: auto; font-size: 13px; font-family: 'DM Mono', monospace; color: var(--green); }
+
+  .table-wrap { padding: 1.25rem 2rem 3rem; }
+  .col-headers {
+    display: grid; padding: 0 14px 8px;
+    font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: .07em;
+    border-bottom: 1px solid var(--border); margin-bottom: 6px;
+    grid-template-columns: 110px 100px 100px 100px 1fr;
+  }
+  .rows { display: flex; flex-direction: column; gap: 3px; }
+  .row {
+    display: grid; align-items: center; padding: 10px 14px;
+    border-radius: 8px; border: 1px solid transparent; transition: all 0.12s;
+    grid-template-columns: 110px 100px 100px 100px 1fr;
+  }
+  .row:hover { background: var(--surface); border-color: var(--border); }
+  .row.next-highlight { background: var(--surface2); border-color: var(--border2); }
+  .row.past { opacity: 0.28; }
+  .time-cell { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 500; color: var(--text); }
+  .stop-cell { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text-muted); }
+  .badge {
+    display: inline-block; font-size: 10px; font-family: 'DM Mono', monospace;
+    padding: 3px 8px; border-radius: 5px; font-weight: 500;
+  }
+  .badge.itc { background: var(--tag-itc-bg); color: var(--tag-itc); }
+  .badge.uclub-tag { background: var(--tag-uclub-bg); color: var(--tag-uclub); }
+  .badge.note { background: var(--note-bg); color: var(--note); }
+  .tags-cell { display: flex; gap: 6px; align-items: center; }
+  .section-divider {
+    padding: 14px 14px 6px; font-size: 11px; font-family: 'DM Mono', monospace;
+    color: var(--text-dim); text-transform: uppercase; letter-spacing: .07em;
+    margin-top: 8px; border-top: 1px solid var(--border);
+  }
+  .section-divider:first-child { border-top: none; margin-top: 0; }
+
+  footer {
+    padding: 1.5rem 2rem; border-top: 1px solid var(--border);
+    font-size: 12px; color: var(--text-dim); font-family: 'DM Mono', monospace;
+    display: flex; gap: 2rem; flex-wrap: wrap;
+  }
+  footer span { display: flex; align-items: center; gap: 6px; }
+
+  @media (max-width: 580px) {
+    header, .table-wrap, footer, .controls, .route-strip { padding-left: 1rem; padding-right: 1rem; }
+    .next-bus { margin-left: 1rem; margin-right: 1rem; }
+    .col-headers, .row { grid-template-columns: 110px 90px 90px 1fr; }
+    .col-headers span:nth-child(3), .row .moh { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo-row">
+      <div class="bus-icon">🚌</div>
+      <div>
+        <h1>BU <span>↔</span> UClub</h1>
+        <div class="subtitle">Binghamton University Bus Schedule</div>
+      </div>
+    </div>
+  </div>
+  <div class="live-time">
+    <span class="clock" id="clock">--:-- --</span>
+    <span id="dayLabel">loading...</span>
+  </div>
+</header>
+
+<div class="route-strip">
+  <div class="stop-node"><div class="dot"></div><span>Leave University</span></div>
+  <div class="route-seg"><div class="line"></div><div class="arr">→</div><div class="line"></div></div>
+  <div class="stop-node"><div class="dot"></div><span>UClub</span></div>
+  <div class="route-seg"><div class="line"></div><div class="arr">→</div><div class="line"></div></div>
+  <div class="stop-node"><div class="dot uc"></div><span>Return University</span></div>
+</div>
+
+<div class="controls">
+  <div class="pill-group" id="dayGroup">
+    <button class="active" data-d="weekday" onclick="setDay('weekday')">Weekday M–F</button>
+    <button data-d="weekend" onclick="setDay('weekend')">Weekend Sa/Su</button>
+  </div>
+</div>
+
+<div id="nextBusWrap"></div>
+<div class="table-wrap" id="tableWrap"></div>
+
+<footer>
+  <span><span class="badge itc">ITC-UCLUB</span> Stops at ITC &amp; Mohawk</span>
+  <span><span class="badge uclub-tag">UCLUB</span> Express (no ITC stop)</span>
+  <span><span class="badge note">Day</span> Runs that day only</span>
+</footer>
+
+<script>
+const WEEKDAY = [
+  {type:'ITC-UCLUB', bu:'7:30 AM',  moh:'7:40 AM',  uc:'7:52 AM'},
+  {type:'ITC-UCLUB', bu:'7:40 AM',  moh:'7:50 AM',  uc:'8:02 AM'},
+  {type:'ITC-UCLUB', bu:'8:00 AM',  moh:'8:10 AM',  uc:'8:22 AM'},
+  {type:'ITC-UCLUB', bu:'8:30 AM',  moh:'8:40 AM',  uc:'8:52 AM'},
+  {type:'UCLUB',     bu:'8:45 AM',  moh:'8:50 AM',  uc:'8:54 AM'},
+  {type:'ITC-UCLUB', bu:'9:00 AM',  moh:'9:10 AM',  uc:'9:22 AM'},
+  {type:'UCLUB',     bu:'9:15 AM',  moh:'9:20 AM',  uc:'9:24 AM'},
+  {type:'ITC-UCLUB', bu:'9:30 AM',  moh:'9:40 AM',  uc:'9:52 AM'},
+  {type:'UCLUB',     bu:'9:40 AM',  moh:'9:45 AM',  uc:'9:49 AM'},
+  {type:'ITC-UCLUB', bu:'10:00 AM', moh:'10:10 AM', uc:'10:22 AM'},
+  {type:'ITC-UCLUB', bu:'10:30 AM', moh:'10:40 AM', uc:'10:52 AM'},
+  {type:'UCLUB',     bu:'10:50 AM', moh:'10:55 AM', uc:'10:59 AM'},
+  {type:'ITC-UCLUB', bu:'11:00 AM', moh:'11:10 AM', uc:'11:22 AM'},
+  {type:'ITC-UCLUB', bu:'11:30 AM', moh:'11:40 AM', uc:'11:52 AM'},
+  {type:'ITC-UCLUB', bu:'12:00 PM', moh:'12:10 PM', uc:'12:22 PM'},
+  {type:'ITC-UCLUB', bu:'12:30 PM', moh:'12:40 PM', uc:'12:52 PM'},
+  {type:'ITC-UCLUB', bu:'1:00 PM',  moh:'1:10 PM',  uc:'1:22 PM'},
+  {type:'ITC-UCLUB', bu:'1:30 PM',  moh:'1:40 PM',  uc:'1:52 PM'},
+  {type:'ITC-UCLUB', bu:'2:00 PM',  moh:'2:10 PM',  uc:'2:22 PM'},
+  {type:'ITC-UCLUB', bu:'2:30 PM',  moh:'2:40 PM',  uc:'2:52 PM'},
+  {type:'ITC-UCLUB', bu:'3:00 PM',  moh:'3:10 PM',  uc:'3:22 PM'},
+  {type:'ITC-UCLUB', bu:'3:30 PM',  moh:'3:40 PM',  uc:'3:52 PM'},
+  {type:'ITC-UCLUB', bu:'4:00 PM',  moh:'4:10 PM',  uc:'4:22 PM'},
+  {type:'ITC-UCLUB', bu:'4:30 PM',  moh:'4:40 PM',  uc:'4:52 PM'},
+  {type:'UCLUB',     bu:'4:40 PM',  moh:'4:45 PM',  uc:'4:49 PM'},
+  {type:'ITC-UCLUB', bu:'5:00 PM',  moh:'5:10 PM',  uc:'5:22 PM'},
+  {type:'UCLUB',     bu:'5:15 PM',  moh:'5:20 PM',  uc:'5:24 PM'},
+  {type:'ITC-UCLUB', bu:'5:30 PM',  moh:'5:40 PM',  uc:'5:52 PM'},
+  {type:'UCLUB',     bu:'5:45 PM',  moh:'5:50 PM',  uc:'5:54 PM'},
+  {type:'ITC-UCLUB', bu:'6:00 PM',  moh:'6:10 PM',  uc:'6:22 PM'},
+  {type:'ITC-UCLUB', bu:'6:30 PM',  moh:'6:40 PM',  uc:'6:52 PM'},
+  {type:'ITC-UCLUB', bu:'7:00 PM',  moh:'7:10 PM',  uc:'7:22 PM'},
+  {type:'ITC-UCLUB', bu:'7:30 PM',  moh:'7:40 PM',  uc:'7:52 PM'},
+  {type:'ITC-UCLUB', bu:'8:00 PM',  moh:'8:10 PM',  uc:'8:22 PM'},
+  {type:'ITC-UCLUB', bu:'8:30 PM',  moh:'8:40 PM',  uc:'8:52 PM'},
+  {type:'ITC-UCLUB', bu:'9:00 PM',  moh:'9:10 PM',  uc:'9:22 PM'},
+  {type:'ITC-UCLUB', bu:'9:30 PM',  moh:'9:40 PM',  uc:'9:52 PM'},
+  {type:'UCLUB',     bu:'10:00 PM', moh:'10:15 PM', uc:'10:19 PM'},
+  {type:'UCLUB',     bu:'10:35 PM', moh:'10:40 PM', uc:'10:44 PM', note:'M–T'},
+  {type:'UCLUB',     bu:'10:45 PM', moh:'10:50 PM', uc:'10:54 PM', note:'F'},
+  {type:'UCLUB',     bu:'11:15 PM', moh:'11:20 PM', uc:'11:24 PM', note:'F'},
+  {type:'UCLUB',     bu:'11:30 PM', moh:'11:35 PM', uc:'11:39 PM', note:'M–T'},
+];
+
+const WEEKEND = [
+  {type:'UCLUB', bu:'9:00 AM',  moh:'9:05 AM',  uc:'9:09 AM'},
+  {type:'UCLUB', bu:'9:45 AM',  moh:'9:50 AM',  uc:'9:54 AM'},
+  {type:'UCLUB', bu:'10:30 AM', moh:'10:35 AM', uc:'10:39 AM'},
+  {type:'UCLUB', bu:'11:00 AM', moh:'11:05 AM', uc:'11:09 AM'},
+  {type:'UCLUB', bu:'11:45 AM', moh:'11:50 AM', uc:'11:54 AM'},
+  {type:'UCLUB', bu:'12:15 PM', moh:'12:20 PM', uc:'12:24 PM'},
+  {type:'UCLUB', bu:'12:45 PM', moh:'12:50 PM', uc:'12:54 PM'},
+  {type:'UCLUB', bu:'1:15 PM',  moh:'1:20 PM',  uc:'1:24 PM'},
+  {type:'UCLUB', bu:'2:00 PM',  moh:'2:05 PM',  uc:'2:09 PM'},
+  {type:'UCLUB', bu:'2:30 PM',  moh:'2:35 PM',  uc:'2:39 PM'},
+  {type:'UCLUB', bu:'3:15 PM',  moh:'3:20 PM',  uc:'3:24 PM'},
+  {type:'UCLUB', bu:'4:15 PM',  moh:'4:20 PM',  uc:'4:24 PM'},
+  {type:'UCLUB', bu:'5:15 PM',  moh:'5:20 PM',  uc:'5:24 PM'},
+  {type:'UCLUB', bu:'6:00 PM',  moh:'6:05 PM',  uc:'6:09 PM'},
+  {type:'UCLUB', bu:'6:45 PM',  moh:'6:50 PM',  uc:'6:54 PM'},
+  {type:'UCLUB', bu:'7:45 PM',  moh:'7:50 PM',  uc:'7:54 PM'},
+  {type:'UCLUB', bu:'8:45 PM',  moh:'8:50 PM',  uc:'8:54 PM'},
+  {type:'UCLUB', bu:'10:00 PM', moh:'10:05 PM', uc:'10:09 PM'},
+  {type:'UCLUB', bu:'10:30 PM', moh:'10:35 PM', uc:'10:39 PM', note:'Su'},
+  {type:'UCLUB', bu:'10:45 PM', moh:'10:50 PM', uc:'10:54 PM', note:'Sa'},
+  {type:'UCLUB', bu:'11:15 PM', moh:'11:20 PM', uc:'11:24 PM'},
+];
+
+let day = 'weekday';
+
+function parseTime(s) {
+  const [time, ampm] = s.split(' ');
+  let [h, m] = time.split(':').map(Number);
+  if (ampm === 'PM' && h !== 12) h += 12;
+  if (ampm === 'AM' && h === 12) h = 0;
+  return h * 60 + m;
+}
+
+function nowMins() {
+  const n = new Date();
+  return n.getHours() * 60 + n.getMinutes();
+}
+
+function formatCountdown(mins) {
+  const diff = mins - nowMins();
+  if (diff <= 0) return null;
+  if (diff < 60) return `in ${diff}m`;
+  return `in ${Math.floor(diff/60)}h ${diff%60}m`;
+}
+
+function getRows() { return day === 'weekday' ? WEEKDAY : WEEKEND; }
+
+function findNextIdx(rows) {
+  const now = nowMins();
+  return rows.findIndex(r => parseTime(r.bu) >= now);
+}
+
+function render() {
+  const rows = getRows();
+  const nextIdx = findNextIdx(rows);
+  const nb = document.getElementById('nextBusWrap');
+
+  if (nextIdx >= 0) {
+    const r = rows[nextIdx];
+    const cd = formatCountdown(parseTime(r.bu));
+    nb.innerHTML = `<div class="next-bus">
+      <div class="dot"></div>
+      <div>
+        <div class="label">Next departure from campus</div>
+        <div class="time">${r.bu}</div>
+      </div>
+      ${cd ? `<div class="countdown">${cd}</div>` : ''}
+    </div>`;
+  } else {
+    nb.innerHTML = `<div class="next-bus"><div class="dot" style="background:#7a7f8e;animation:none"></div><div><div class="label">No more buses today</div></div></div>`;
+  }
+
+  let html = `<div class="col-headers">
+    <span>Route</span><span>Leave University</span><span class="moh">UClub</span><span>Return University</span><span>Notes</span>
+  </div><div class="rows">`;
+
+  let lastSection = '';
+  rows.forEach((r, i) => {
+    const depMins = parseTime(r.bu);
+    const now = nowMins();
+    const isPast = depMins < now;
+    const isNext = i === nextIdx;
+    const section = depMins < 12*60 ? 'Morning' : depMins < 17*60 ? 'Afternoon' : 'Evening';
+
+    if (section !== lastSection) {
+      html += `<div class="section-divider">${section}</div>`;
+      lastSection = section;
+    }
+
+    const cls = isNext ? 'row next-highlight' : isPast ? 'row past' : 'row';
+    const badge = r.type === 'ITC-UCLUB'
+      ? `<span class="badge itc">ITC-UCLUB</span>`
+      : `<span class="badge uclub-tag">UCLUB</span>`;
+    const noteBadge = r.note ? `<span class="badge note">${r.note} only</span>` : '';
+
+    html += `<div class="${cls}">
+      <span>${badge}</span>
+      <span class="time-cell">${r.bu}</span>
+      <span class="stop-cell moh">${r.moh}</span>
+      <span class="time-cell">${r.uc}</span>
+      <span class="tags-cell">${noteBadge}</span>
+    </div>`;
+  });
+
+  html += `</div>`;
+  document.getElementById('tableWrap').innerHTML = html;
+}
+
+function setDay(d) {
+  day = d;
+  document.querySelectorAll('#dayGroup button').forEach(b => b.classList.toggle('active', b.dataset.d === d));
+  render();
+}
+
+function updateClock() {
+  const now = new Date();
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let h = now.getHours(), m = now.getMinutes();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  document.getElementById('clock').textContent = `${h}:${String(m).padStart(2,'0')} ${ampm}`;
+  document.getElementById('dayLabel').textContent = days[now.getDay()];
+}
+
+setInterval(updateClock, 1000);
+setInterval(render, 60000);
+updateClock();
+render();
+</script>
+</body>
+</html>
