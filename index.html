@@ -139,11 +139,30 @@
   footer span { display: flex; align-items: center; gap: 6px; }
 
   @media (max-width: 580px) {
-    header, .table-wrap, footer, .controls, .route-strip { padding-left: 1rem; padding-right: 1rem; }
-    .next-bus { margin-left: 1rem; margin-right: 1rem; }
-    .col-headers, .row { grid-template-columns: 110px 90px 90px 1fr; }
-    .col-headers span:nth-child(3), .row .moh { display: none; }
+  header, .table-wrap, footer, .controls, .route-strip {
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
+
+  .next-bus {
+    margin-left: 1rem;
+    margin-right: 1rem;
+  }
+
+  .col-headers,
+  .row {
+    grid-template-columns: 90px 80px 80px 1fr;
+    font-size: 11px;
+  }
+
+  .row {
+    padding: 8px 10px;
+  }
+
+  .stop-cell {
+    font-size: 11px;
+  }
+}
 </style>
 </head>
 <body>
