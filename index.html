@@ -24,6 +24,8 @@
     --accent-dim: #1a2a45;
     --green: #5bf6a0;
     --green-dim: #0e2a1c;
+    --purple: #a78bfa;
+    --purple-dim: #1e1535;
     --tag-itc: #5b9cf6;
     --tag-itc-bg: #1a2a45;
     --tag-uclub: #a78bfa;
@@ -56,15 +58,17 @@
     display: flex; align-items: center; overflow-x: auto;
   }
   .stop-node { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 80px; }
-  .stop-node .dot {
-    width: 12px; height: 12px; border-radius: 50%;
-    background: var(--accent); border: 2px solid var(--accent);
-  }
-  .stop-node .dot.uc { background: var(--tag-uclub); border-color: var(--tag-uclub); }
+  .stop-node .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); border: 2px solid var(--accent); }
+  .stop-node .dot.uc { background: var(--purple); border-color: var(--purple); }
+  .stop-node .dot.active-stop { box-shadow: 0 0 0 3px rgba(91,156,246,0.3); }
+  .stop-node .dot.active-stop.uc { box-shadow: 0 0 0 3px rgba(167,139,250,0.3); }
   .stop-node span { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text-muted); text-align: center; white-space: nowrap; }
+  .stop-node span.active-label { color: var(--text); }
   .route-seg { display: flex; align-items: center; gap: 2px; position: relative; top: -10px; flex: 1; min-width: 20px; }
   .route-seg .line { flex: 1; height: 2px; background: var(--border2); }
+  .route-seg .line.active { background: var(--accent); }
   .route-seg .arr { font-size: 11px; color: var(--text-dim); }
+  .route-seg .arr.active { color: var(--accent); }
 
   .controls {
     padding: 1rem 2rem; display: flex; gap: 12px; flex-wrap: wrap;
@@ -83,33 +87,45 @@
   .pill-group button:last-child { border-right: none; }
   .pill-group button.active { background: var(--accent-dim); color: var(--accent); }
 
+  /* Next bus banner — color changes by view */
   .next-bus {
     margin: 1.25rem 2rem 0; padding: 14px 18px;
-    background: var(--green-dim); border: 1px solid #1f5e3a; border-radius: 10px;
-    display: flex; align-items: center; gap: 12px;
+    border-radius: 10px; display: flex; align-items: center; gap: 12px;
+    background: var(--green-dim); border: 1px solid #1f5e3a;
   }
+  .next-bus.from-uclub { background: var(--purple-dim); border-color: #3b2a6e; }
+  .next-bus.none { background: var(--surface); border-color: var(--border); }
   .next-bus .dot {
     width: 8px; height: 8px; border-radius: 50%; background: var(--green);
     flex-shrink: 0; animation: pulse 2s infinite;
   }
+  .next-bus.from-uclub .dot { background: var(--purple); }
+  .next-bus.none .dot { background: #7a7f8e; animation: none; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
   .next-bus .label { font-size: 11px; color: var(--green); font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .06em; }
+  .next-bus.from-uclub .label { color: var(--purple); }
+  .next-bus.none .label { color: var(--text-muted); }
   .next-bus .time { font-size: 18px; font-family: 'DM Mono', monospace; font-weight: 500; color: var(--text); }
   .next-bus .countdown { margin-left: auto; font-size: 13px; font-family: 'DM Mono', monospace; color: var(--green); }
+  .next-bus.from-uclub .countdown { color: var(--purple); }
 
   .table-wrap { padding: 1.25rem 2rem 3rem; }
+
+  /* Grid configs per view */
+  .g-campus   { grid-template-columns: 110px 130px 130px 1fr; }
+  .g-uclub    { grid-template-columns: 110px 130px 130px 1fr; }
+  .g-full     { grid-template-columns: 110px 100px 100px 100px 1fr; }
+
   .col-headers {
     display: grid; padding: 0 14px 8px;
     font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text-muted);
     text-transform: uppercase; letter-spacing: .07em;
     border-bottom: 1px solid var(--border); margin-bottom: 6px;
-    grid-template-columns: 110px 100px 100px 100px 1fr;
   }
   .rows { display: flex; flex-direction: column; gap: 3px; }
   .row {
     display: grid; align-items: center; padding: 10px 14px;
     border-radius: 8px; border: 1px solid transparent; transition: all 0.12s;
-    grid-template-columns: 110px 100px 100px 100px 1fr;
   }
   .row:hover { background: var(--surface); border-color: var(--border); }
   .row.next-highlight { background: var(--surface2); border-color: var(--border2); }
@@ -139,30 +155,13 @@
   footer span { display: flex; align-items: center; gap: 6px; }
 
   @media (max-width: 580px) {
-  header, .table-wrap, footer, .controls, .route-strip {
-    padding-left: 1rem;
-    padding-right: 1rem;
+    header, .table-wrap, footer, .controls, .route-strip { padding-left: 1rem; padding-right: 1rem; }
+    .next-bus { margin-left: 1rem; margin-right: 1rem; }
+    .g-campus, .g-uclub { grid-template-columns: 90px 110px 110px 1fr; font-size: 11px; }
+    .g-full { grid-template-columns: 90px 80px 80px 1fr; font-size: 11px; }
+    .row { padding: 8px 10px; }
+    .stop-cell { font-size: 11px; }
   }
-
-  .next-bus {
-    margin-left: 1rem;
-    margin-right: 1rem;
-  }
-
-  .col-headers,
-  .row {
-    grid-template-columns: 90px 80px 80px 1fr;
-    font-size: 11px;
-  }
-
-  .row {
-    padding: 8px 10px;
-  }
-
-  .stop-cell {
-    font-size: 11px;
-  }
-}
 </style>
 </head>
 <body>
@@ -183,15 +182,41 @@
   </div>
 </header>
 
-<div class="route-strip">
-  <div class="stop-node"><div class="dot uc"></div><span>Leave University</span></div>
-  <div class="route-seg"><div class="line"></div><div class="arr">→</div><div class="line"></div></div>
-  <div class="stop-node"><div class="dot"></div><span>UClub</span></div>
-  <div class="route-seg"><div class="line"></div><div class="arr">→</div><div class="line"></div></div>
-  <div class="stop-node"><div class="dot uc"></div><span>Return University</span></div>
+<div class="route-strip" id="routeStrip">
+    <div class="stop-node" id="sn-bu">
+      <div class="dot" id="sd-bu"></div>
+      <span id="sl-bu">Leave University</span>
+    </div>
+  
+    <div class="route-seg">
+      <div class="line" id="line1a"></div>
+      <div class="arr" id="arr1">→</div>
+      <div class="line" id="line1b"></div>
+    </div>
+  
+    <div class="stop-node" id="sn-uc">
+      <div class="dot uc" id="sd-uc"></div>
+      <span id="sl-uc">UClub</span>
+    </div>
+  
+    <div class="route-seg">
+      <div class="line" id="line2a"></div>
+      <div class="arr" id="arr2">→</div>
+      <div class="line" id="line2b"></div>
+    </div>
+  
+    <div class="stop-node" id="sn-ret">
+      <div class="dot" id="sd-ret"></div>
+      <span id="sl-ret">Return University</span>
+    </div>
 </div>
 
 <div class="controls">
+  <div class="pill-group" id="viewGroup">
+    <button class="active" data-v="campus" onclick="setView('campus')">From Campus</button>
+    <button data-v="uclub" onclick="setView('uclub')">From UClub</button>
+    <button data-v="full" onclick="setView('full')">Full Schedule</button>
+  </div>
   <div class="pill-group" id="dayGroup">
     <button class="active" data-d="weekday" onclick="setDay('weekday')">Weekday M–F</button>
     <button data-d="weekend" onclick="setDay('weekend')">Weekend Sa/Su</button>
@@ -278,6 +303,7 @@ const WEEKEND = [
 ];
 
 let day = 'weekday';
+let view = 'campus'; // 'campus' | 'uclub' | 'full'
 
 function parseTime(s) {
   const [time, ampm] = s.split(' ');
@@ -301,42 +327,145 @@ function formatCountdown(mins) {
 
 function getRows() { return day === 'weekday' ? WEEKDAY : WEEKEND; }
 
-function findNextIdx(rows) {
+function findNextIdx(rows, field) {
   const now = nowMins();
-  return rows.findIndex(r => parseTime(r.bu) >= now);
+  return rows.findIndex(r => parseTime(r[field]) >= now);
+}
+
+function updateRouteStrip() {
+  // Reset all
+  ['bu','uc','ret'].forEach(id => {
+    document.getElementById('sd-' + id).classList.remove('active-stop');
+    document.getElementById('sl-' + id).classList.remove('active-label');
+  });
+
+  ['line1a','line1b','line2a','line2b'].forEach(id => {
+    document.getElementById(id).classList.remove('active');
+  });
+
+  ['arr1','arr2'].forEach(id => {
+    document.getElementById(id).classList.remove('active');
+  });
+
+  if (view === 'campus') {
+    // BU → UClub
+    document.getElementById('sd-bu').classList.add('active-stop');
+    document.getElementById('sl-bu').classList.add('active-label');
+
+    document.getElementById('sd-uc').classList.add('active-stop');
+    document.getElementById('sl-uc').classList.add('active-label');
+
+    document.getElementById('line1a').classList.add('active');
+    document.getElementById('line1b').classList.add('active');
+    document.getElementById('arr1').classList.add('active');
+
+  } else if (view === 'uclub') {
+    // UClub → Return
+    document.getElementById('sd-uc').classList.add('active-stop');
+    document.getElementById('sl-uc').classList.add('active-label');
+
+    document.getElementById('sd-ret').classList.add('active-stop');
+    document.getElementById('sl-ret').classList.add('active-label');
+
+    document.getElementById('line2a').classList.add('active');
+    document.getElementById('line2b').classList.add('active');
+    document.getElementById('arr2').classList.add('active');
+
+  } else {
+    // Full route
+    ['bu','uc','ret'].forEach(id => {
+      document.getElementById('sd-' + id).classList.add('active-stop');
+      document.getElementById('sl-' + id).classList.add('active-label');
+    });
+
+    ['line1a','line1b','line2a','line2b'].forEach(id => {
+      document.getElementById(id).classList.add('active');
+    });
+
+    ['arr1','arr2'].forEach(id => {
+      document.getElementById(id).classList.add('active');
+    });
+  }
 }
 
 function render() {
   const rows = getRows();
-  const nextIdx = findNextIdx(rows);
+  updateRouteStrip();
+
+  // Determine which field to use for "next" countdown
+  const nextField = view === 'uclub' ? 'moh' : 'bu';
+  const nextIdx = findNextIdx(rows, nextField);
   const nb = document.getElementById('nextBusWrap');
 
   if (nextIdx >= 0) {
     const r = rows[nextIdx];
-    const cd = formatCountdown(parseTime(r.bu));
-    nb.innerHTML = `<div class="next-bus">
+    const depTime = r[nextField];
+    const cd = formatCountdown(parseTime(depTime));
+    const isUclub = view === 'uclub';
+    const label = isUclub ? 'Next departure from UClub' : 'Next departure from campus';
+    nb.innerHTML = `<div class="next-bus${isUclub ? ' from-uclub' : ''}">
       <div class="dot"></div>
       <div>
-        <div class="label">Next departure from campus</div>
-        <div class="time">${r.bu}</div>
+        <div class="label">${label}</div>
+        <div class="time">${depTime}</div>
       </div>
       ${cd ? `<div class="countdown">${cd}</div>` : ''}
     </div>`;
   } else {
-    nb.innerHTML = `<div class="next-bus"><div class="dot" style="background:#7a7f8e;animation:none"></div><div><div class="label">No more buses today</div></div></div>`;
+    nb.innerHTML = `<div class="next-bus none"><div class="dot"></div><div><div class="label">No more buses today</div></div></div>`;
   }
 
-  let html = `<div class="col-headers">
-    <span>Route</span><span>Leave University</span><span class="moh">UClub</span><span>Return University</span><span>Notes</span>
-  </div><div class="rows">`;
+  // Build table
+  let gridClass, headers, rowFn;
+
+  if (view === 'campus') {
+    gridClass = 'g-campus';
+    headers = `<span>Route</span><span>Leave University</span><span>Arrives UClub</span><span>Notes</span>`;
+    rowFn = (r, cls, badge, noteBadge) => `<div class="${cls} ${gridClass}">
+      <span>${badge}</span>
+      <span class="time-cell">${r.bu}</span>
+      <span class="time-cell">${r.moh}</span>
+      <span class="tags-cell">${noteBadge}</span>
+    </div>`;
+  } else if (view === 'uclub') {
+    gridClass = 'g-uclub';
+    headers = `<span>Route</span><span>Leave UClub</span><span>Return University</span><span>Notes</span>`;
+    // For "from UClub" view: departure is UClub time (uc), arrival is return (moh → bu loop back)
+    // Since we only have the outbound times, use uc as departure and moh as the "return" approximation
+    // Actually the schedule only shows outbound. We note that in the loop the return is implicit.
+    // We'll show: UClub depart (uc col) and "~Return" which would be some time later.
+    // Since we don't have exact return times in the data, we'll just show uc and note that
+    // return time is approx. We do have moh as a midpoint — let's show uc + moh as the two cols
+    // for from-uclub view: "Leave UClub" = uc, "Mohawk St" = moh (closest we have to return)
+    headers = `<span>Route</span><span>Leave UClub</span><span>Arrives University</span><span>Notes</span>`;
+    rowFn = (r, cls, badge, noteBadge) => `<div class="${cls} ${gridClass}">
+      <span>${badge}</span>
+      <span class="time-cell">${r.moh}</span>
+      <span class="time-cell">${r.uc}</span>
+      <span class="tags-cell">${noteBadge}</span>
+    </div>`;
+  } else {
+    gridClass = 'g-full';
+    headers = `<span>Route</span><span>Leave University</span><span>UClub</span><span>Arrive University</span><span>Notes</span>`;
+    rowFn = (r, cls, badge, noteBadge) => `<div class="${cls} ${gridClass}">
+      <span>${badge}</span>
+      <span class="time-cell">${r.bu}</span>
+      <span class="time-cell">${r.moh}</span>
+      <span class="time-cell">${r.uc}</span>
+      <span class="tags-cell">${noteBadge}</span>
+    </div>`;
+  }
+
+  let html = `<div class="col-headers ${gridClass}">${headers}</div><div class="rows">`;
 
   let lastSection = '';
   rows.forEach((r, i) => {
-    const depMins = parseTime(r.bu);
+    const depMins = parseTime(r[nextField]);
     const now = nowMins();
     const isPast = depMins < now;
     const isNext = i === nextIdx;
-    const section = depMins < 12*60 ? 'Morning' : depMins < 17*60 ? 'Afternoon' : 'Evening';
+    const sectionMins = parseTime(r.bu);
+    const section = sectionMins < 12*60 ? 'Morning' : sectionMins < 17*60 ? 'Afternoon' : 'Evening';
 
     if (section !== lastSection) {
       html += `<div class="section-divider">${section}</div>`;
@@ -349,17 +478,17 @@ function render() {
       : `<span class="badge uclub-tag">UCLUB</span>`;
     const noteBadge = r.note ? `<span class="badge note">${r.note} only</span>` : '';
 
-    html += `<div class="${cls}">
-      <span>${badge}</span>
-      <span class="time-cell">${r.bu}</span>
-      <span class="time-cell moh">${r.moh}</span>
-      <span class="time-cell">${r.uc}</span>
-      <span class="tags-cell">${noteBadge}</span>
-    </div>`;
+    html += rowFn(r, cls, badge, noteBadge);
   });
 
   html += `</div>`;
   document.getElementById('tableWrap').innerHTML = html;
+}
+
+function setView(v) {
+  view = v;
+  document.querySelectorAll('#viewGroup button').forEach(b => b.classList.toggle('active', b.dataset.v === v));
+  render();
 }
 
 function setDay(d) {
